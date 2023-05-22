@@ -1,0 +1,89 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  APP_BINARY: go-movie-api-build
+  APP_CONTAINER: movie_api
+  DOCKER_COMPOSE: docker-compose.yml
+
+tasks:
+  up:
+    desc: starts all containers in the background without forcing build
+    cmds:
+      - echo 'Starting Docker images...'
+      - docker compose -f {{.DOCKER_COMPOSE}} up -d
+      - echo 'Docker images started!'
+    silent: true
+
+  build_app:
+    desc: builds the application binary as a linux executable
+    cmds:
+      - echo 'Building application binary...'
+      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o {{.APP_BINARY}} ./
+      - echo 'Done!'
+    silent: true
+
+  up_build:
+    desc: stops docker-compose (if running), builds all containers and starts docker compose, generate code using sqlc, table migrations
+    cmds:
+      - task: build_app
+      - echo 'Stopping docker images (if running...)'
+      - docker compose -f {{.DOCKER_COMPOSE}} down
+      - echo 'Building (when required) and starting docker images...'
+      - docker compose -f {{.DOCKER_COMPOSE}} up --build -d
+      - echo 'Docker images built and started!'
+      - docker compose -f {{.DOCKER_COMPOSE}} logs -t -f {{.APP_CONTAINER}}
+    silent: false
+
+  start:
+    desc: stops docker-compose (if running), rebuild app if source code changes
+    cmds:
+      - task: build_app
+      - echo 'Stopping docker images (if running...)'
+      - docker compose -f {{.DOCKER_COMPOSE}} down
+      - echo 'Building (when required) and starting docker images...'
+      - docker compose -f {{.DOCKER_COMPOSE}} up --build -d
+      - echo 'Docker images built and started!'
+      - docker compose -f {{.DOCKER_COMPOSE}} logs -t -f {{.APP_CONTAINER}}
+    silent: false
+
+  down:
+    desc: stop docker compose
+    cmds:
+      - echo 'Stopping docker compose...'
+      - docker compose -f {{.DOCKER_COMPOSE}} down
+      - echo 'Done!'
+    silent: true
+
+  create_migration:
+    desc: create table migration
+    cmds:
+      - echo 'Creating migration...'
+      - docker run --rm -v "$(pwd)/migrations:/migrations" --network host migrate/migrate create -ext sql -dir /migrations -seq {{.CLI_ARGS}}
+      - echo 'Done!'
+    silent: true
+
+  migrate:
+    desc: migrate table
+    cmds:
+      - echo 'Migrating tables...'
+      - docker compose -f {{.DOCKER_COMPOSE}} run --rm up_migration
+      - echo 'Done!'
+    silent: true
+
+  migrate_down:
+    desc: migrate down table
+    cmds:
+      - echo 'Migrating down tables...'
+      - docker compose -f {{.DOCKER_COMPOSE}} run --rm down_migration
+      - echo 'Done!'
+    silent: true
+
+  test:
+    desc: running all unit testings
+    cmds:
+      - echo 'Running all unit testings...'
+      - go test -v -cover -short ./...
+      - echo 'Done!'
+    silent: true

@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  movie_api:
+    build:
+      context: "./"
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "9000:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=postgres_db port=5432 user=admin password=password dbname=movie_db sslmode=disable timezone=UTC"
+
+  postgres_db:
+    image: 'postgres:14.7'
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: movie_db
+    volumes:
+      - type: volume
+        source: movie_db_data
+        target: "/var/lib/postgresql/data"
+        read_only: false
+
+  up_migration:
+    image: "migrate/migrate:latest"
+    profiles:
+      - tools
+    volumes:
+      - ./migrations:/migrations
+    command: [ "-path", "/migrations", "-database",  "postgres://admin:password@postgres_db:5432/movie_db?sslmode=disable", "-verbose", "up" ]
+    deploy:
+      mode: replicated
+      replicas: 1
+    links:
+      - postgres_db
+    depends_on:
+      - postgres_db
+
+  down_migration:
+    image: "migrate/migrate:latest"
+    profiles:
+      - tools
+    volumes:
+      - ./migrations:/migrations
+    command: [ "-path", "/migrations", "-database",  "postgres://admin:password@postgres_db:5432/movie_db?sslmode=disable", "-verbose", "down" ]
+    deploy:
+      mode: replicated
+      replicas: 1
+    links:
+      - postgres_db
+    depends_on:
+      - postgres_db
+
+volumes:
+  movie_db_data:
+    name: movie_db_data
+    external: false
