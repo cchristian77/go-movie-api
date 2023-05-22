@@ -5,10 +5,16 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go-movie-api/utils"
+	"gorm.io/gorm"
 	"net/http"
+	"time"
+
+	_movieController "go-movie-api/modules/movie/controller/http"
+	_movieRepo "go-movie-api/modules/movie/repository"
+	_movieService "go-movie-api/modules/movie/service"
 )
 
-func InitializedRouter() *echo.Echo {
+func InitializedRouter(db *gorm.DB) *echo.Echo {
 	router := echo.New()
 
 	// Config CORS
@@ -40,5 +46,18 @@ func InitializedRouter() *echo.Echo {
 		})
 	})
 
+	// Register API Routes
+	registerRoutes(router, db)
+
 	return router
+}
+
+func registerRoutes(router *echo.Echo, db *gorm.DB) {
+
+	timeout := 5 * time.Second
+
+	// Movies
+	moviesRepo := _movieRepo.NewMovieRepository(db)
+	moviesService := _movieService.NewMovieService(moviesRepo, timeout)
+	_movieController.NewMovieController(router, moviesService)
 }

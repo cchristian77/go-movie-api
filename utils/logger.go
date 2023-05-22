@@ -23,7 +23,7 @@ func InitializedLogger() *zap.Logger {
 	logFile, _ := os.OpenFile("logs/errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	core := zapcore.NewTee(
-		// logger to record in warn level (including errors) to masterdata.log
+		// logger to record in warn level (including errors) to errors.log
 		zapcore.NewCore(
 			zapcore.NewJSONEncoder(fileLoggerConfig),
 			zapcore.AddSync(logFile),

@@ -3,9 +3,12 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"github.com/knadh/koanf/v2"
 	"go-movie-api/utils"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
-	"os"
 	"time"
 
 	_ "github.com/jackc/pgconn"
@@ -29,17 +32,32 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func ConnectToDB() *sql.DB {
-	// get dsn from env.json
-	//dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-	//	config.String("database.host"),
-	//	config.Int("database.port"),
-	//	config.String("database.user"),
-	//	config.String("database.password"),
-	//	config.String("database.db_name"),
-	//)
+func OpenGormDB(sqlDB *sql.DB) (*gorm.DB, error) {
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{
+		Conn: sqlDB,
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	dsn := os.Getenv("DSN")
+	return gormDB, err
+}
+
+func ConnectToDB(config *koanf.Koanf) *sql.DB {
+	// get dsn from env.json
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		config.String("database.host"),
+		config.Int("database.port"),
+		config.String("database.user"),
+		config.String("database.password"),
+		config.String("database.db_name"),
+	)
+
+	// get dsn from docker
+	//dsn := os.Getenv("DSN")
+
 	fmt.Println(dsn)
 	for {
 		connection, err := openDB(dsn)

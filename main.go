@@ -10,6 +10,7 @@ import (
 	"go-movie-api/api"
 	"go-movie-api/database"
 	"go-movie-api/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
@@ -17,12 +18,13 @@ var config = koanf.New(".")
 
 type Config struct {
 	DB     *sql.DB
+	GormDB *gorm.DB
 	Router *echo.Echo
 }
 
 func init() {
 	// Load Config JSON
-	if err := config.Load(file.Provider("env.json"), json.Parser()); err != nil {
+	if err := config.Load(file.Provider("./configs/env.json"), json.Parser()); err != nil {
 		log.Fatalf("error loading config: %v", err)
 	}
 
@@ -34,9 +36,20 @@ func main() {
 	utils.Logger = utils.InitializedLogger()
 	defer utils.Logger.Sync()
 
+	db := database.ConnectToDB(config)
+	if db == nil {
+		utils.Logger.Fatal("Can't connect to Postgres!")
+	}
+
+	gormDB, err := database.OpenGormDB(db)
+	if err != nil {
+		utils.Logger.Fatal(fmt.Sprintf("gorm driver errror: %v", err))
+	}
+
 	app := Config{
-		DB:     database.ConnectToDB(),
-		Router: api.InitializedRouter(),
+		DB:     db,
+		GormDB: gormDB,
+		Router: api.InitializedRouter(gormDB),
 	}
 	defer app.DB.Close()
 
