@@ -20,7 +20,7 @@ type Genre struct {
 
 type GenreService interface {
 	FetchPagination(ctx context.Context, page int, perPage int) ([]Genre, utils.Pagination, error)
-	GetByID(ctx context.Context, uuid uuid.UUID) (Genre, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Genre, error)
 	Store(ctx context.Context, genre *Genre) (Genre, error)
 	Update(ctx context.Context, genre *Genre) error
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error
@@ -29,7 +29,8 @@ type GenreService interface {
 
 type GenreRepository interface {
 	FetchPagination(ctx context.Context, pagination *utils.Pagination) ([]Genre, error)
-	GetByID(ctx context.Context, uuid uuid.UUID) (Genre, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Genre, error)
+	FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (Genre, error)
 	Store(ctx context.Context, genre *Genre) (Genre, error)
 	Update(ctx context.Context, genre *Genre) error
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error

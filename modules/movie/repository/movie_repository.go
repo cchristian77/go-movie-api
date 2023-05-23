@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"go-movie-api/domain"
 	"go-movie-api/utils"
+	"go-movie-api/utils/helper"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -33,11 +34,29 @@ func (repo *movieRepository) FetchPagination(ctx context.Context, pagination *ut
 	return movies, nil
 }
 
-func (repo *movieRepository) GetByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
+func (repo *movieRepository) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
 	var movie domain.Movie
 
 	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).First(&movie)
 	if result.Error != nil {
+		return domain.Movie{}, result.Error
+	}
+
+	return movie, nil
+}
+
+func (repo *movieRepository) FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
+	var movie domain.Movie
+
+	result := repo.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("uuid = ?", uuid.String()).
+		First(&movie)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return domain.Movie{}, helper.NotFoundErr
+		}
+		utils.Logger.Error(result.Error.Error())
 		return domain.Movie{}, result.Error
 	}
 
@@ -55,18 +74,6 @@ func (repo *movieRepository) Store(ctx context.Context, movie *domain.Movie) (do
 }
 
 func (repo *movieRepository) Update(ctx context.Context, movie *domain.Movie) error {
-	//result := repo.db.WithContext(ctx).
-	//	Clauses(clause.Locking{Strength: "UPDATE"}).
-	//	Where("uuid = ?", movie.Uuid).
-	//	First(&movie)
-	//if result.Error != nil {
-	//	if result.Error == gorm.ErrRecordNotFound {
-	//		return helper.NotFoundErr
-	//	}
-	//	utils.Logger.Error(result.Error.Error())
-	//	return result.Error
-	//}
-
 	result := repo.db.WithContext(ctx).Model(movie).Where("uuid = ?", movie.Uuid.String()).Updates(movie)
 	if result.Error != nil {
 		return result.Error

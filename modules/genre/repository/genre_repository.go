@@ -33,7 +33,7 @@ func (repo *genreRepository) FetchPagination(ctx context.Context, pagination *ut
 	return genres, nil
 }
 
-func (repo *genreRepository) GetByID(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
+func (repo *genreRepository) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
 	var genre domain.Genre
 
 	result := repo.db.WithContext(ctx).
@@ -41,6 +41,24 @@ func (repo *genreRepository) GetByID(ctx context.Context, uuid uuid.UUID) (domai
 		Where("uuid = ?", uuid.String()).
 		First(&genre)
 	if result.Error != nil {
+		return domain.Genre{}, result.Error
+	}
+
+	return genre, nil
+}
+
+func (repo *genreRepository) FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
+	var genre domain.Genre
+
+	result := repo.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("uuid = ?", uuid.String()).
+		First(&genre)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return domain.Genre{}, helper.NotFoundErr
+		}
+		utils.Logger.Error(result.Error.Error())
 		return domain.Genre{}, result.Error
 	}
 

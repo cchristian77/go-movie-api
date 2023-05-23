@@ -38,11 +38,11 @@ func (service *movieService) FetchPagination(ctx context.Context, page int, perP
 	return movies, pagination, nil
 }
 
-func (service *movieService) GetByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
+func (service *movieService) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	movie, err := service.movieRepo.GetByID(ctx, uuid)
+	movie, err := service.movieRepo.FindByID(ctx, uuid)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return domain.Movie{}, errors.NotFoundErr
@@ -69,7 +69,7 @@ func (service *movieService) Update(ctx context.Context, movie *domain.Movie) er
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.movieRepo.GetByID(ctx, movie.Uuid); err != nil {
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, movie.Uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
@@ -87,7 +87,7 @@ func (service *movieService) SoftDelete(ctx context.Context, uuid uuid.UUID) err
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.movieRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
@@ -105,7 +105,7 @@ func (service *movieService) Delete(ctx context.Context, uuid uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.movieRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}

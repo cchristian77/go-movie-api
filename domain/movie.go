@@ -23,7 +23,7 @@ type Movie struct {
 
 type MovieService interface {
 	FetchPagination(ctx context.Context, page int, perPage int) ([]Movie, utils.Pagination, error)
-	GetByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
 	Store(ctx context.Context, movie *Movie) (Movie, error)
 	Update(ctx context.Context, movie *Movie) error
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error
@@ -32,7 +32,8 @@ type MovieService interface {
 
 type MovieRepository interface {
 	FetchPagination(ctx context.Context, pagination *utils.Pagination) ([]Movie, error)
-	GetByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
+	FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (Movie, error)
 	Store(ctx context.Context, movie *Movie) (Movie, error)
 	Update(ctx context.Context, movie *Movie) error
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error

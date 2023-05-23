@@ -38,11 +38,11 @@ func (service *genreService) FetchPagination(ctx context.Context, page int, perP
 	return genres, pagination, nil
 }
 
-func (service *genreService) GetByID(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
+func (service *genreService) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	genre, err := service.genreRepo.GetByID(ctx, uuid)
+	genre, err := service.genreRepo.FindByID(ctx, uuid)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return domain.Genre{}, errors.NotFoundErr
@@ -69,7 +69,7 @@ func (service *genreService) Update(ctx context.Context, genre *domain.Genre) er
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.genreRepo.GetByID(ctx, genre.Uuid); err != nil {
+	if _, err := service.genreRepo.FindByIDForUpdate(ctx, genre.Uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
@@ -87,7 +87,7 @@ func (service *genreService) SoftDelete(ctx context.Context, uuid uuid.UUID) err
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.genreRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.genreRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
@@ -105,7 +105,7 @@ func (service *genreService) Delete(ctx context.Context, uuid uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.genreRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.genreRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
