@@ -59,7 +59,7 @@ func (controller *MovieController) Show(ec echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
-	data, err := controller.MovieService.GetByID(ec.Request().Context(), id)
+	data, err := controller.MovieService.FindByID(ec.Request().Context(), id)
 	if err != nil {
 		return err
 	}

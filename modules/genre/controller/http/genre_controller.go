@@ -59,7 +59,7 @@ func (controller *GenreController) Show(ec echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
-	data, err := controller.GenreService.GetByID(ec.Request().Context(), id)
+	data, err := controller.GenreService.FindByID(ec.Request().Context(), id)
 	if err != nil {
 		return err
 	}
