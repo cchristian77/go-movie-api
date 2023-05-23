@@ -77,11 +77,16 @@ func (controller *MovieController) Store(ec echo.Context) error {
 		return err
 	}
 
+	var genres []domain.Genre
+	for _, genreID := range request.GenreIDs {
+		genres = append(genres, domain.Genre{Uuid: genreID})
+	}
 	data, err := controller.MovieService.Store(ec.Request().Context(), &domain.Movie{
 		Title:    request.Title,
 		Duration: request.Duration,
 		Year:     request.Year,
 		Synopsis: request.Synopsis,
+		Genres:   genres,
 	})
 	if err != nil {
 		return err
@@ -105,12 +110,17 @@ func (controller *MovieController) Update(ec echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
+	var genres []domain.Genre
+	for _, genreID := range request.GenreIDs {
+		genres = append(genres, domain.Genre{Uuid: genreID})
+	}
 	err = controller.MovieService.Update(ec.Request().Context(), &domain.Movie{
 		Uuid:     id,
 		Title:    request.Title,
 		Duration: request.Duration,
 		Year:     request.Year,
 		Synopsis: request.Synopsis,
+		Genres:   genres,
 	})
 	if err != nil {
 		return err

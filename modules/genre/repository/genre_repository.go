@@ -47,6 +47,19 @@ func (repo *genreRepository) FindByID(ctx context.Context, uuid uuid.UUID) (doma
 	return genre, nil
 }
 
+func (repo *genreRepository) FindByIDs(ctx context.Context, uuids []uuid.UUID) ([]domain.Genre, error) {
+	var genres []domain.Genre
+
+	result := repo.db.WithContext(ctx).
+		Where("uuid IN ?", uuids).
+		Find(&genres)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return genres, nil
+}
+
 func (repo *genreRepository) FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (domain.Genre, error) {
 	var genre domain.Genre
 

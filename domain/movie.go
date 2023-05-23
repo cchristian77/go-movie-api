@@ -13,13 +13,13 @@ type Movie struct {
 	Uuid      uuid.UUID      `json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 	Title     string         `json:"title"`
 	Duration  int32          `json:"duration"`
 	Year      int32          `json:"year"`
 	Synopsis  string         `json:"synopsis"`
 	Genres    []Genre        `json:"genres,omitempty" gorm:"many2many:movie_genres;"`
-	Ratings   []Rating       `json:"ratings"`
+	Ratings   []Rating       `json:"ratings,omitempty"`
 }
 
 type MovieService interface {

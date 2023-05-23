@@ -13,7 +13,7 @@ type Genre struct {
 	Uuid      uuid.UUID      `json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 	Name      string         `json:"name"`
 	Movies    []Movie        `json:"movies,omitempty" gorm:"many2many:movie_genres;" `
 }
@@ -30,6 +30,7 @@ type GenreService interface {
 type GenreRepository interface {
 	FetchPagination(ctx context.Context, pagination *utils.Pagination) ([]Genre, error)
 	FindByID(ctx context.Context, uuid uuid.UUID) (Genre, error)
+	FindByIDs(ctx context.Context, uuids []uuid.UUID) ([]Genre, error)
 	FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (Genre, error)
 	Store(ctx context.Context, genre *Genre) (Genre, error)
 	Update(ctx context.Context, genre *Genre) error
