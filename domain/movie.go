@@ -18,23 +18,24 @@ type Movie struct {
 	Duration  int32          `json:"duration"`
 	Year      int32          `json:"year"`
 	Synopsis  string         `json:"synopsis"`
-	Genres    []Genre        `json:"genres" gorm:"many2many:movie_genres;"`
+	Genres    []Genre        `json:"genres,omitempty" gorm:"many2many:movie_genres;"`
 }
 
 type MovieService interface {
 	FetchPagination(ctx context.Context, page int, perPage int) ([]Movie, utils.Pagination, error)
-	GetByID(ctx context.Context, uuid string) (Movie, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
 	Store(ctx context.Context, movie *Movie) (Movie, error)
 	Update(ctx context.Context, movie *Movie) error
-	SoftDelete(ctx context.Context, uuid string) error
-	Delete(ctx context.Context, uuid string) error
+	SoftDelete(ctx context.Context, uuid uuid.UUID) error
+	Delete(ctx context.Context, uuid uuid.UUID) error
 }
 
 type MovieRepository interface {
 	FetchPagination(ctx context.Context, pagination *utils.Pagination) ([]Movie, error)
-	GetByID(ctx context.Context, uuid string) (Movie, error)
+	FindByID(ctx context.Context, uuid uuid.UUID) (Movie, error)
+	FindByIDForUpdate(ctx context.Context, uuid uuid.UUID) (Movie, error)
 	Store(ctx context.Context, movie *Movie) (Movie, error)
 	Update(ctx context.Context, movie *Movie) error
-	SoftDelete(ctx context.Context, uuid string) error
-	Delete(ctx context.Context, uuid string) error
+	SoftDelete(ctx context.Context, uuid uuid.UUID) error
+	Delete(ctx context.Context, uuid uuid.UUID) error
 }

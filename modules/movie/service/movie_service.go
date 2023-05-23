@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"go-movie-api/domain"
 	"go-movie-api/utils"
 	errors "go-movie-api/utils/helper"
@@ -37,11 +38,11 @@ func (service *movieService) FetchPagination(ctx context.Context, page int, perP
 	return movies, pagination, nil
 }
 
-func (service *movieService) GetByID(ctx context.Context, uuid string) (domain.Movie, error) {
+func (service *movieService) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	movie, err := service.movieRepo.GetByID(ctx, uuid)
+	movie, err := service.movieRepo.FindByID(ctx, uuid)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return domain.Movie{}, errors.NotFoundErr
@@ -68,6 +69,13 @@ func (service *movieService) Update(ctx context.Context, movie *domain.Movie) er
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, movie.Uuid); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.NotFoundErr
+		}
+		return err
+	}
+
 	if err := service.movieRepo.Update(ctx, movie); err != nil {
 		return err
 	}
@@ -75,11 +83,11 @@ func (service *movieService) Update(ctx context.Context, movie *domain.Movie) er
 	return nil
 }
 
-func (service *movieService) SoftDelete(ctx context.Context, uuid string) error {
+func (service *movieService) SoftDelete(ctx context.Context, uuid uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.movieRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
@@ -93,11 +101,11 @@ func (service *movieService) SoftDelete(ctx context.Context, uuid string) error 
 	return nil
 }
 
-func (service *movieService) Delete(ctx context.Context, uuid string) error {
+func (service *movieService) Delete(ctx context.Context, uuid uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
-	if _, err := service.movieRepo.GetByID(ctx, uuid); err != nil {
+	if _, err := service.movieRepo.FindByIDForUpdate(ctx, uuid); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.NotFoundErr
 		}
