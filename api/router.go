@@ -15,6 +15,9 @@ import (
 	_movieController "go-movie-api/modules/movie/controller/http"
 	_movieRepo "go-movie-api/modules/movie/repository"
 	_movieService "go-movie-api/modules/movie/service"
+	_ratingController "go-movie-api/modules/rating/controller/http"
+	_ratingRepo "go-movie-api/modules/rating/repository"
+	_ratingService "go-movie-api/modules/rating/service"
 )
 
 func InitializedRouter(db *gorm.DB) *echo.Echo {
@@ -68,4 +71,9 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 	genreRepo := _genreRepo.NewGenreRepository(db)
 	genreService := _genreService.NewGenreService(genreRepo, timeout)
 	_genreController.NewGenreController(router, genreService)
+
+	// Rating
+	ratingRepo := _ratingRepo.NewRatingRepository(db)
+	ratingService := _ratingService.NewRatingService(ratingRepo, timeout)
+	_ratingController.NewRatingController(router, ratingService)
 }

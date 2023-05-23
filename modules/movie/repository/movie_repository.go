@@ -37,7 +37,10 @@ func (repo *movieRepository) FetchPagination(ctx context.Context, pagination *ut
 func (repo *movieRepository) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
 	var movie domain.Movie
 
-	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).First(&movie)
+	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).
+		Preload("Genres").
+		Preload("Ratings").
+		First(&movie)
 	if result.Error != nil {
 		return domain.Movie{}, result.Error
 	}

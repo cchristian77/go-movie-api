@@ -76,19 +76,7 @@ func (repo *genreRepository) Store(ctx context.Context, genre *domain.Genre) (do
 }
 
 func (repo *genreRepository) Update(ctx context.Context, genre *domain.Genre) error {
-	result := repo.db.WithContext(ctx).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("uuid = ?", genre.Uuid).
-		First(&genre)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return helper.NotFoundErr
-		}
-		utils.Logger.Error(result.Error.Error())
-		return result.Error
-	}
-
-	result = repo.db.WithContext(ctx).Model(genre).Where("uuid = ?", genre.Uuid.String()).Updates(genre)
+	result := repo.db.WithContext(ctx).Model(genre).Where("uuid = ?", genre.Uuid.String()).Updates(genre)
 	if result.Error != nil {
 		return result.Error
 	}

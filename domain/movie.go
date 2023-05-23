@@ -19,6 +19,7 @@ type Movie struct {
 	Year      int32          `json:"year"`
 	Synopsis  string         `json:"synopsis"`
 	Genres    []Genre        `json:"genres,omitempty" gorm:"many2many:movie_genres;"`
+	Ratings   []Rating       `json:"ratings"`
 }
 
 type MovieService interface {
