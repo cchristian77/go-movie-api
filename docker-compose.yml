@@ -32,6 +32,14 @@ services:
         target: "/var/lib/postgresql/data"
         read_only: false
 
+  pgadmin:
+    image: 'dpage/pgadmin4:latest'
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+    ports:
+      - "5050:80"
+
   up_migration:
     image: "migrate/migrate:latest"
     profiles:

@@ -4,17 +4,20 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	_genreController "go-movie-api/modules/genre/controller/http"
+	_genreRepo "go-movie-api/modules/genre/repository"
+	_genreService "go-movie-api/modules/genre/service"
 	"go-movie-api/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"time"
 
-	_genreController "go-movie-api/modules/genre/controller/http"
-	_genreRepo "go-movie-api/modules/genre/repository"
-	_genreService "go-movie-api/modules/genre/service"
 	_movieController "go-movie-api/modules/movie/controller/http"
 	_movieRepo "go-movie-api/modules/movie/repository"
 	_movieService "go-movie-api/modules/movie/service"
+	_ratingController "go-movie-api/modules/rating/controller/http"
+	_ratingRepo "go-movie-api/modules/rating/repository"
+	_ratingService "go-movie-api/modules/rating/service"
 )
 
 func InitializedRouter(db *gorm.DB) *echo.Echo {
@@ -59,13 +62,18 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 		})
 	})
 
-	// Movies
-	movieRepo := _movieRepo.NewMovieRepository(db)
-	movieService := _movieService.NewMovieService(movieRepo, timeout)
-	_movieController.NewMovieController(router, movieService)
-
 	// Genre
 	genreRepo := _genreRepo.NewGenreRepository(db)
 	genreService := _genreService.NewGenreService(genreRepo, timeout)
 	_genreController.NewGenreController(router, genreService)
+
+	// Movies
+	movieRepo := _movieRepo.NewMovieRepository(db)
+	movieService := _movieService.NewMovieService(movieRepo, genreRepo, timeout)
+	_movieController.NewMovieController(router, movieService)
+
+	// Rating
+	ratingRepo := _ratingRepo.NewRatingRepository(db)
+	ratingService := _ratingService.NewRatingService(ratingRepo, timeout)
+	_ratingController.NewRatingController(router, ratingService)
 }

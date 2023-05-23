@@ -37,7 +37,10 @@ func (repo *movieRepository) FetchPagination(ctx context.Context, pagination *ut
 func (repo *movieRepository) FindByID(ctx context.Context, uuid uuid.UUID) (domain.Movie, error) {
 	var movie domain.Movie
 
-	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).First(&movie)
+	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).
+		Preload("Genres").
+		Preload("Ratings").
+		First(&movie)
 	if result.Error != nil {
 		return domain.Movie{}, result.Error
 	}
@@ -74,6 +77,10 @@ func (repo *movieRepository) Store(ctx context.Context, movie *domain.Movie) (do
 }
 
 func (repo *movieRepository) Update(ctx context.Context, movie *domain.Movie) error {
+	if err := repo.db.Model(&movie).Association("Genres").Replace(movie.Genres); err != nil {
+		return err
+	}
+
 	result := repo.db.WithContext(ctx).Model(movie).Where("uuid = ?", movie.Uuid.String()).Updates(movie)
 	if result.Error != nil {
 		return result.Error
