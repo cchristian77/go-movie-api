@@ -43,12 +43,6 @@ func InitializedRouter(db *gorm.DB) *echo.Echo {
 	// Register HTTP Error Handler function
 	router.HTTPErrorHandler = utils.ErrorHandler
 
-	router.GET("/ping", func(ec echo.Context) error {
-		return ec.JSON(http.StatusOK, map[string]string{
-			"message": "Ping!",
-		})
-	})
-
 	// Register API Routes
 	registerRoutes(router, db)
 
@@ -58,6 +52,12 @@ func InitializedRouter(db *gorm.DB) *echo.Echo {
 func registerRoutes(router *echo.Echo, db *gorm.DB) {
 
 	timeout := 5 * time.Second
+
+	router.GET("/ping", func(ec echo.Context) error {
+		return ec.JSON(http.StatusOK, map[string]string{
+			"message": "Ping!",
+		})
+	})
 
 	// Movies
 	movieRepo := _movieRepo.NewMovieRepository(db)
