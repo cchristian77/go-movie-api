@@ -4,7 +4,9 @@ RUN mkdir /app
 
 WORKDIR /app
 
-COPY configs/env.json /app
+RUN mkdir /configs
+
+COPY /configs/env.json /app/configs/env.json
 
 COPY go-movie-api-build /app
 
