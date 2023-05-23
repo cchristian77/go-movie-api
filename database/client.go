@@ -57,8 +57,6 @@ func ConnectToDB(config *koanf.Koanf) *sql.DB {
 
 	// get dsn from docker
 	//dsn := os.Getenv("DSN")
-
-	fmt.Println(dsn)
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {

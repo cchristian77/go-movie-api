@@ -9,16 +9,16 @@ import (
 	"strconv"
 )
 
-type MovieController struct {
-	domain.MovieService
+type GenreController struct {
+	domain.GenreService
 }
 
-func NewMovieController(router *echo.Echo, movieService domain.MovieService) {
-	controller := &MovieController{
-		MovieService: movieService,
+func NewGenreController(router *echo.Echo, genreService domain.GenreService) {
+	controller := &GenreController{
+		GenreService: genreService,
 	}
 
-	group := router.Group("/movies")
+	group := router.Group("/genres")
 	group.POST("", controller.Store)
 	group.GET("", controller.Index)
 	group.GET("/:uuid", controller.Show)
@@ -26,7 +26,7 @@ func NewMovieController(router *echo.Echo, movieService domain.MovieService) {
 	group.DELETE("/:uuid", controller.Destroy)
 }
 
-func (controller *MovieController) Index(ec echo.Context) error {
+func (controller *GenreController) Index(ec echo.Context) error {
 	page, err := strconv.Atoi(ec.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -38,13 +38,13 @@ func (controller *MovieController) Index(ec echo.Context) error {
 	}
 
 	ctx := ec.Request().Context()
-	data, pagination, err := controller.MovieService.FetchPagination(ctx, page, perPage)
+	data, pagination, err := controller.GenreService.FetchPagination(ctx, page, perPage)
 	if err != nil {
 		return err
 	}
 
 	if data == nil {
-		data = make([]domain.Movie, 0)
+		data = make([]domain.Genre, 0)
 	}
 
 	return ec.JSON(http.StatusOK, response.Result{
@@ -53,13 +53,13 @@ func (controller *MovieController) Index(ec echo.Context) error {
 	})
 }
 
-func (controller *MovieController) Show(ec echo.Context) error {
+func (controller *GenreController) Show(ec echo.Context) error {
 	id, err := uuid.Parse(ec.Param("uuid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
-	data, err := controller.MovieService.GetByID(ec.Request().Context(), id)
+	data, err := controller.GenreService.GetByID(ec.Request().Context(), id)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (controller *MovieController) Show(ec echo.Context) error {
 	return ec.JSON(http.StatusOK, data)
 }
 
-func (controller *MovieController) Store(ec echo.Context) error {
+func (controller *GenreController) Store(ec echo.Context) error {
 	var request storeRequest
 	if err := ec.Bind(&request); err != nil {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
@@ -77,11 +77,8 @@ func (controller *MovieController) Store(ec echo.Context) error {
 		return err
 	}
 
-	data, err := controller.MovieService.Store(ec.Request().Context(), &domain.Movie{
-		Title:    request.Title,
-		Duration: request.Duration,
-		Year:     request.Year,
-		Synopsis: request.Synopsis,
+	data, err := controller.GenreService.Store(ec.Request().Context(), &domain.Genre{
+		Name: request.Name,
 	})
 	if err != nil {
 		return err
@@ -90,7 +87,7 @@ func (controller *MovieController) Store(ec echo.Context) error {
 	return ec.JSON(http.StatusCreated, data)
 }
 
-func (controller *MovieController) Update(ec echo.Context) error {
+func (controller *GenreController) Update(ec echo.Context) error {
 	var request updateRequest
 	if err := ec.Bind(&request); err != nil {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
@@ -105,12 +102,9 @@ func (controller *MovieController) Update(ec echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
-	err = controller.MovieService.Update(ec.Request().Context(), &domain.Movie{
-		Uuid:     id,
-		Title:    request.Title,
-		Duration: request.Duration,
-		Year:     request.Year,
-		Synopsis: request.Synopsis,
+	err = controller.GenreService.Update(ec.Request().Context(), &domain.Genre{
+		Uuid: id,
+		Name: request.Name,
 	})
 	if err != nil {
 		return err
@@ -119,13 +113,13 @@ func (controller *MovieController) Update(ec echo.Context) error {
 	return ec.JSON(http.StatusOK, response.UpdateSuccess)
 }
 
-func (controller *MovieController) Destroy(ec echo.Context) error {
+func (controller *GenreController) Destroy(ec echo.Context) error {
 	id, err := uuid.Parse(ec.Param("uuid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "the id is not valid.")
 	}
 
-	err = controller.MovieService.SoftDelete(ec.Request().Context(), id)
+	err = controller.GenreService.SoftDelete(ec.Request().Context(), id)
 	if err != nil {
 		return err
 	}

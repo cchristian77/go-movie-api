@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"time"
 
+	_genreController "go-movie-api/modules/genre/controller/http"
+	_genreRepo "go-movie-api/modules/genre/repository"
+	_genreService "go-movie-api/modules/genre/service"
 	_movieController "go-movie-api/modules/movie/controller/http"
 	_movieRepo "go-movie-api/modules/movie/repository"
 	_movieService "go-movie-api/modules/movie/service"
@@ -57,7 +60,12 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 	timeout := 5 * time.Second
 
 	// Movies
-	moviesRepo := _movieRepo.NewMovieRepository(db)
-	moviesService := _movieService.NewMovieService(moviesRepo, timeout)
-	_movieController.NewMovieController(router, moviesService)
+	movieRepo := _movieRepo.NewMovieRepository(db)
+	movieService := _movieService.NewMovieService(movieRepo, timeout)
+	_movieController.NewMovieController(router, movieService)
+
+	// Genre
+	genreRepo := _genreRepo.NewGenreRepository(db)
+	genreService := _genreService.NewGenreService(genreRepo, timeout)
+	_genreController.NewGenreController(router, genreService)
 }
