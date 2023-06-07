@@ -4,8 +4,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go-movie-api/domain"
+	"go-movie-api/middleware"
 	"go-movie-api/token"
-	"go-movie-api/utils"
 	"go-movie-api/utils/response"
 	"net/http"
 	"strconv"
@@ -21,17 +21,17 @@ func NewUserController(router *echo.Echo, userService domain.UserService) {
 		UserService: userService,
 	}
 
-	userGroup := router.Group("/users", utils.AuthMiddleware)
+	userGroup := router.Group("/users", middleware.AuthMiddleware)
 	userGroup.GET("", controller.Index)
 	userGroup.GET("/:uuid", controller.Show)
 	userGroup.PUT("/:uuid", controller.Update)
 	userGroup.DELETE("/:uuid", controller.Destroy)
 
 	authGroup := router.Group("auth")
-	authGroup.POST("/login", controller.Login)
-	authGroup.POST("/logout", controller.Logout, utils.AuthMiddleware)
 	authGroup.POST("/register", controller.Store)
-	authGroup.POST("/renew-token", controller.RenewAccessToken, utils.AuthMiddleware)
+	authGroup.POST("/login", controller.Login)
+	authGroup.POST("/logout", controller.Logout, middleware.AuthMiddleware)
+	authGroup.POST("/renew-token", controller.RenewAccessToken, middleware.AuthMiddleware)
 }
 
 func (controller *UserController) Login(ec echo.Context) error {
