@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"go-movie-api/domain"
+	"go-movie-api/token"
 	"go-movie-api/utils"
 	errorHelper "go-movie-api/utils/helper"
 	"gorm.io/gorm"
+	"net/http"
 	"time"
 )
 
@@ -26,7 +29,7 @@ func NewUserService(userRepo domain.UserRepository, sessionRepo domain.SessionRe
 	}
 }
 
-func (service *userService) Login(ctx context.Context, user *domain.User) (domain.User, error) {
+func (service *userService) Authentication(ctx context.Context, user *domain.User) (domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
@@ -41,7 +44,7 @@ func (service *userService) Login(ctx context.Context, user *domain.User) (domai
 
 	err = utils.CheckPassword(user.Password, authUser.Password)
 	if err != nil {
-		return domain.User{}, errorHelper.IncorrectCredentialErr
+		return domain.User{}, err
 	}
 
 	return authUser, nil
@@ -161,4 +164,53 @@ func (service *userService) CreateSession(ctx context.Context, session *domain.S
 	}
 
 	return result, nil
+}
+
+func (service *userService) VerifySession(ctx context.Context, payload *token.Payload, refreshToken string) error {
+	session, err := service.sessionRepo.FindByID(ctx, payload.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if session.IsBlocked {
+		return errorHelper.UnauthorizedErr
+	}
+
+	if session.Username != payload.Username {
+		return errorHelper.UnauthorizedErr
+	}
+
+	if session.RefreshToken != refreshToken {
+		return errorHelper.UnauthorizedErr
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		return echo.NewHTTPError(http.StatusUnauthorized, errors.New("session is expired"))
+	}
+
+	return nil
+}
+
+func (service *userService) BlockSession(ctx context.Context, sessionID uuid.UUID) error {
+	fmt.Println(sessionID)
+	session, err := service.sessionRepo.FindByID(ctx, sessionID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errorHelper.NotFoundErr
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		if err = service.sessionRepo.Delete(ctx, session.ID); err != nil {
+			return err
+		}
+	} else {
+		if err = service.sessionRepo.BlockSession(ctx, session.ID); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

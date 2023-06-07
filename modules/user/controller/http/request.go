@@ -18,3 +18,7 @@ type loginRequest struct {
 	Username string `json:"username" form:"username" validate:"required,min=6"`
 	Password string `json:"password" form:"password" validate:"required"`
 }
+
+type renewAccessTokenRequest struct {
+	RefreshToken string `json:"refresh_token" form:"refresh_token" validate:"required"`
+}

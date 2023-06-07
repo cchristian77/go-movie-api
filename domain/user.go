@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"github.com/google/uuid"
+	"go-movie-api/token"
 	"go-movie-api/utils"
 	"gorm.io/gorm"
 	"time"
@@ -31,7 +32,9 @@ type UserService interface {
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error
 	Delete(ctx context.Context, uuid2 uuid.UUID) error
 	CreateSession(ctx context.Context, session *Session) (Session, error)
-	Login(ctx context.Context, user *User) (User, error)
+	Authentication(ctx context.Context, user *User) (User, error)
+	VerifySession(ctx context.Context, payload *token.Payload, refreshToken string) error
+	BlockSession(ctx context.Context, sessionID uuid.UUID) error
 }
 
 type UserRepository interface {

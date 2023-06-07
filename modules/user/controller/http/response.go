@@ -19,3 +19,8 @@ type userResponse struct {
 	FullName string `json:"full_name"`
 	Email    string `json:"email"`
 }
+
+type renewAccessTokenResponse struct {
+	AccessToken          string    `json:"access_token"`
+	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+}

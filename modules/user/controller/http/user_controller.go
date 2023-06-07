@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go-movie-api/domain"
 	"go-movie-api/token"
+	"go-movie-api/utils"
 	"go-movie-api/utils/response"
 	"net/http"
 	"strconv"
@@ -13,25 +14,24 @@ import (
 
 type UserController struct {
 	domain.UserService
-	TokenMaker token.Maker
 }
 
-func NewUserController(router *echo.Echo, tokenMaker token.Maker, userService domain.UserService) {
+func NewUserController(router *echo.Echo, userService domain.UserService) {
 	controller := &UserController{
 		UserService: userService,
-		TokenMaker:  tokenMaker,
 	}
 
-	group := router.Group("/users")
-	group.GET("", controller.Index)
-	group.GET("/:uuid", controller.Show)
-	group.PUT("/:uuid", controller.Update)
-	group.DELETE("/:uuid", controller.Destroy)
+	userGroup := router.Group("/users", utils.AuthMiddleware)
+	userGroup.GET("", controller.Index)
+	userGroup.GET("/:uuid", controller.Show)
+	userGroup.PUT("/:uuid", controller.Update)
+	userGroup.DELETE("/:uuid", controller.Destroy)
 
 	authGroup := router.Group("auth")
 	authGroup.POST("/login", controller.Login)
-	authGroup.POST("/logout", controller.Logout)
+	authGroup.POST("/logout", controller.Logout, utils.AuthMiddleware)
 	authGroup.POST("/register", controller.Store)
+	authGroup.POST("/renew-token", controller.RenewAccessToken, utils.AuthMiddleware)
 }
 
 func (controller *UserController) Login(ec echo.Context) error {
@@ -45,7 +45,7 @@ func (controller *UserController) Login(ec echo.Context) error {
 	}
 
 	ctx := ec.Request().Context()
-	user, err := controller.UserService.Login(ctx, &domain.User{
+	user, err := controller.UserService.Authentication(ctx, &domain.User{
 		Username: request.Username,
 		Password: request.Password,
 	})
@@ -53,7 +53,7 @@ func (controller *UserController) Login(ec echo.Context) error {
 		return err
 	}
 
-	accessToken, accessPayload, err := controller.TokenMaker.GenerateToken(
+	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
 		user.Username,
 		15*time.Minute,
 	)
@@ -61,7 +61,7 @@ func (controller *UserController) Login(ec echo.Context) error {
 		return err
 	}
 
-	refreshToken, refreshPayload, err := controller.TokenMaker.GenerateToken(
+	refreshToken, refreshPayload, err := token.TokenMaker.GenerateToken(
 		user.Username,
 		24*time.Hour,
 	)
@@ -97,8 +97,51 @@ func (controller *UserController) Login(ec echo.Context) error {
 }
 
 func (controller *UserController) Logout(ec echo.Context) error {
+	//authPayload := ec.Get(utils.AuthPayloadKey).(*token.Payload)
+	//err := controller.UserService.BlockSession(ec.Request().Context(), authPayload.ID)
+	//if err != nil {
+	//	return err
+	//}
 
-	return nil
+	return ec.JSON(http.StatusOK, "Logout success !")
+}
+
+func (controller *UserController) RenewAccessToken(ec echo.Context) error {
+	var request renewAccessTokenRequest
+	if err := ec.Bind(&request); err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err.Error())
+	}
+
+	if err := ec.Validate(request); err != nil {
+		return err
+	}
+
+	refreshPayload, err := token.TokenMaker.VerifyToken(request.RefreshToken)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+	}
+
+	err = controller.UserService.VerifySession(
+		ec.Request().Context(),
+		refreshPayload,
+		request.RefreshToken,
+	)
+	if err != nil {
+		return err
+	}
+
+	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
+		refreshPayload.Username,
+		15*time.Minute,
+	)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return ec.JSON(http.StatusOK, renewAccessTokenResponse{
+		AccessToken:          accessToken,
+		AccessTokenExpiresAt: accessPayload.ExpiredAt,
+	})
 }
 
 func (controller *UserController) Index(ec echo.Context) error {

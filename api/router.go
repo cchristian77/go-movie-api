@@ -68,6 +68,12 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 		})
 	})
 
+	tokenMaker, err := token.NewJWTMaker("secret")
+	if err != nil {
+		utils.Logger.Fatal(fmt.Sprintf("failed to create token maker: %s", err))
+	}
+	token.TokenMaker = tokenMaker
+
 	// Genre
 	genreRepo := _genreRepo.NewGenreRepository(db)
 	genreService := _genreService.NewGenreService(genreRepo, timeout)
@@ -86,10 +92,6 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 	// User
 	userRepo := _userRepo.NewUserRepository(db)
 	sessionRepo := _sessionRepo.NewSessionRepository(db)
-	tokenMaker, err := token.NewJWTMaker("secret")
-	if err != nil {
-		utils.Logger.Fatal(fmt.Sprintf("failed to create token maker: %s", err))
-	}
 	userService := _userService.NewUserService(userRepo, sessionRepo, timeout)
-	_userController.NewUserController(router, tokenMaker, userService)
+	_userController.NewUserController(router, userService)
 }

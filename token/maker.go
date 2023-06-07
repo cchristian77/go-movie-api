@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+var TokenMaker Maker
+
 // Maker is an interface for managing tokens
 type Maker interface {
 	// GenerateToken creates a new token for a specific username and duration
