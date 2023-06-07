@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/knadh/koanf/v2"
 	"go-movie-api/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -44,14 +43,14 @@ func OpenGormDB(sqlDB *sql.DB) (*gorm.DB, error) {
 	return gormDB, err
 }
 
-func ConnectToDB(config *koanf.Koanf) *sql.DB {
+func ConnectToDB() *sql.DB {
 	// get dsn from env.json
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		config.String("database.host"),
-		config.Int("database.port"),
-		config.String("database.user"),
-		config.String("database.password"),
-		config.String("database.db_name"),
+		utils.Env.Database.Host,
+		utils.Env.Database.Port,
+		utils.Env.Database.User,
+		utils.Env.Database.Password,
+		utils.Env.Database.DBName,
 	)
 
 	// get dsn from docker

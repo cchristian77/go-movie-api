@@ -6,6 +6,7 @@ import (
 	"go-movie-api/domain"
 	"go-movie-api/middleware"
 	"go-movie-api/token"
+	"go-movie-api/utils"
 	"net/http"
 	"time"
 )
@@ -74,10 +75,12 @@ func (controller *AuthController) Login(ec echo.Context) error {
 
 	tokenID := uuid.Must(uuid.NewRandom())
 
+	accessTokenDuration, _ := time.ParseDuration(utils.Env.Auth.AccessTokenExpiration)
+	refreshTokenDuration, _ := time.ParseDuration(utils.Env.Auth.RefreshTokenExpiration)
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
-		15*time.Minute,
+		accessTokenDuration,
 	)
 	if err != nil {
 		return err
@@ -86,7 +89,7 @@ func (controller *AuthController) Login(ec echo.Context) error {
 	refreshToken, refreshPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
-		24*time.Hour,
+		refreshTokenDuration,
 	)
 	if err != nil {
 		return err
@@ -168,10 +171,12 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 
 	tokenID := uuid.Must(uuid.NewRandom())
 
+	accessTokenDuration, _ := time.ParseDuration(utils.Env.Auth.AccessTokenExpiration)
+	refreshTokenDuration, _ := time.ParseDuration(utils.Env.Auth.RefreshTokenExpiration)
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
-		15*time.Minute,
+		accessTokenDuration,
 	)
 	if err != nil {
 		return err
@@ -180,7 +185,7 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 	refreshToken, refreshPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
-		24*time.Hour,
+		refreshTokenDuration,
 	)
 	if err != nil {
 		return err
@@ -200,15 +205,7 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 	}
 
 	controller.AuthService.DeleteOldSession(ctx, &session)
-	createdSession, err := controller.AuthService.CreateSession(ctx, &domain.Session{
-		ID:           tokenID,
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		UserAgent:    ec.Request().UserAgent(),
-		ClientIp:     ec.RealIP(),
-		IsBlocked:    false,
-		ExpiresAt:    refreshTokenExpiresAt,
-	})
+	createdSession, err := controller.AuthService.CreateSession(ctx, &session)
 	if err != nil {
 		return err
 	}
