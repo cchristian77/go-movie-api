@@ -2,6 +2,7 @@ package token
 
 import (
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -17,8 +18,8 @@ func NewJWTMaker(secretKey string) (Maker, error) {
 }
 
 // GenerateToken creates a new token for a specific username and duration
-func (maker *JWTMaker) GenerateToken(username string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(username, duration)
+func (maker *JWTMaker) GenerateToken(id uuid.UUID, userUuid uuid.UUID, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(id, userUuid, duration)
 	if err != nil {
 		return "", payload, err
 	}
@@ -33,7 +34,7 @@ func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return nil, ErrInvalidToken
+			return nil, InvalidTokenErr
 		}
 		return []byte(maker.secretKey), nil
 	}
@@ -41,15 +42,15 @@ func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
 	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)
 	if err != nil {
 		verr, ok := err.(*jwt.ValidationError)
-		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
-			return nil, ErrExpiredToken
+		if ok && errors.Is(verr.Inner, ExpiredTokenErr) {
+			return nil, ExpiredTokenErr
 		}
-		return nil, ErrInvalidToken
+		return nil, InvalidTokenErr
 	}
 
 	payload, ok := jwtToken.Claims.(*Payload)
 	if !ok {
-		return nil, ErrInvalidToken
+		return nil, InvalidTokenErr
 	}
 
 	return payload, nil

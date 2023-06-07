@@ -29,7 +29,7 @@ func NewUserService(userRepo domain.UserRepository, sessionRepo domain.SessionRe
 	}
 }
 
-func (service *userService) Authentication(ctx context.Context, user *domain.User) (domain.User, error) {
+func (service *userService) Authenticate(ctx context.Context, user *domain.User) (domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, service.timeout)
 	defer cancel()
 
@@ -169,23 +169,32 @@ func (service *userService) CreateSession(ctx context.Context, session *domain.S
 func (service *userService) VerifySession(ctx context.Context, payload *token.Payload, refreshToken string) error {
 	session, err := service.sessionRepo.FindByID(ctx, payload.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
+		if err == gorm.ErrRecordNotFound {
+			return errorHelper.NotFoundErr
+		}
 
-	if session.IsBlocked {
-		return errorHelper.UnauthorizedErr
-	}
-
-	if session.Username != payload.Username {
-		return errorHelper.UnauthorizedErr
+		return err
 	}
 
 	if session.RefreshToken != refreshToken {
-		return errorHelper.UnauthorizedErr
+		return token.InvalidTokenErr
 	}
 
 	if time.Now().After(session.ExpiresAt) {
 		return echo.NewHTTPError(http.StatusUnauthorized, errors.New("session is expired"))
+	}
+
+	user, err := service.userRepo.FindByID(ctx, payload.UserUuid)
+	if session.IsBlocked {
+		if err == gorm.ErrRecordNotFound {
+			return errorHelper.NotFoundErr
+		}
+
+		return err
+	}
+
+	if session.UserID != user.ID {
+		return token.InvalidTokenErr
 	}
 
 	return nil
@@ -199,17 +208,11 @@ func (service *userService) BlockSession(ctx context.Context, sessionID uuid.UUI
 			return errorHelper.NotFoundErr
 		}
 
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	if time.Now().After(session.ExpiresAt) {
-		if err = service.sessionRepo.Delete(ctx, session.ID); err != nil {
-			return err
-		}
-	} else {
-		if err = service.sessionRepo.BlockSession(ctx, session.ID); err != nil {
-			return err
-		}
+	if err = service.sessionRepo.BlockSession(ctx, session.ID); err != nil {
+		return err
 	}
 
 	return nil

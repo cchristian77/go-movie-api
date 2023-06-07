@@ -30,8 +30,8 @@ func NewUserController(router *echo.Echo, userService domain.UserService) {
 	authGroup := router.Group("auth")
 	authGroup.POST("/register", controller.Store)
 	authGroup.POST("/login", controller.Login)
+	authGroup.POST("/renew-token", controller.RenewAccessToken)
 	authGroup.POST("/logout", controller.Logout, middleware.AuthMiddleware)
-	authGroup.POST("/renew-token", controller.RenewAccessToken, middleware.AuthMiddleware)
 }
 
 func (controller *UserController) Login(ec echo.Context) error {
@@ -45,7 +45,7 @@ func (controller *UserController) Login(ec echo.Context) error {
 	}
 
 	ctx := ec.Request().Context()
-	user, err := controller.UserService.Authentication(ctx, &domain.User{
+	user, err := controller.UserService.Authenticate(ctx, &domain.User{
 		Username: request.Username,
 		Password: request.Password,
 	})
@@ -53,8 +53,11 @@ func (controller *UserController) Login(ec echo.Context) error {
 		return err
 	}
 
+	tokenID := uuid.Must(uuid.NewRandom())
+
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
-		user.Username,
+		tokenID,
+		user.Uuid,
 		15*time.Minute,
 	)
 	if err != nil {
@@ -62,7 +65,8 @@ func (controller *UserController) Login(ec echo.Context) error {
 	}
 
 	refreshToken, refreshPayload, err := token.TokenMaker.GenerateToken(
-		user.Username,
+		tokenID,
+		user.Uuid,
 		24*time.Hour,
 	)
 	if err != nil {
@@ -70,8 +74,8 @@ func (controller *UserController) Login(ec echo.Context) error {
 	}
 
 	session, err := controller.UserService.CreateSession(ctx, &domain.Session{
-		ID:           refreshPayload.ID,
-		Username:     user.Username,
+		ID:           accessPayload.ID,
+		UserID:       user.ID,
 		RefreshToken: refreshToken,
 		UserAgent:    ec.Request().UserAgent(),
 		ClientIp:     ec.RealIP(),
@@ -89,6 +93,7 @@ func (controller *UserController) Login(ec echo.Context) error {
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
 		User: userResponse{
+			Uuid:     user.Uuid,
 			Username: user.Username,
 			FullName: user.FullName,
 			Email:    user.Email,
@@ -97,13 +102,13 @@ func (controller *UserController) Login(ec echo.Context) error {
 }
 
 func (controller *UserController) Logout(ec echo.Context) error {
-	//authPayload := ec.Get(utils.AuthPayloadKey).(*token.Payload)
-	//err := controller.UserService.BlockSession(ec.Request().Context(), authPayload.ID)
-	//if err != nil {
-	//	return err
-	//}
+	authPayload := ec.Get(middleware.AuthPayloadKey).(*token.Payload)
+	err := controller.UserService.BlockSession(ec.Request().Context(), authPayload.ID)
+	if err != nil {
+		return err
+	}
 
-	return ec.JSON(http.StatusOK, "Logout success !")
+	return ec.JSON(http.StatusOK, map[string]string{"message": "Logout success !"})
 }
 
 func (controller *UserController) RenewAccessToken(ec echo.Context) error {
@@ -130,17 +135,42 @@ func (controller *UserController) RenewAccessToken(ec echo.Context) error {
 		return err
 	}
 
+	user, err := controller.UserService.FindByID(ec.Request().Context(), refreshPayload.UserUuid)
+	if err != nil {
+		return err
+	}
+
+	tokenID := uuid.Must(uuid.NewRandom())
+
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
-		refreshPayload.Username,
+		tokenID,
+		user.Uuid,
 		15*time.Minute,
 	)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	return ec.JSON(http.StatusOK, renewAccessTokenResponse{
-		AccessToken:          accessToken,
-		AccessTokenExpiresAt: accessPayload.ExpiredAt,
+	refreshToken, refreshPayload, err := token.TokenMaker.GenerateToken(
+		tokenID,
+		user.Uuid,
+		24*time.Hour,
+	)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, authResponse{
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		User: userResponse{
+			Uuid:     user.Uuid,
+			Username: user.Username,
+			FullName: user.FullName,
+			Email:    user.Email,
+		},
 	})
 }
 

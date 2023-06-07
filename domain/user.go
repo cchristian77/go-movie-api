@@ -32,7 +32,7 @@ type UserService interface {
 	SoftDelete(ctx context.Context, uuid uuid.UUID) error
 	Delete(ctx context.Context, uuid2 uuid.UUID) error
 	CreateSession(ctx context.Context, session *Session) (Session, error)
-	Authentication(ctx context.Context, user *User) (User, error)
+	Authenticate(ctx context.Context, user *User) (User, error)
 	VerifySession(ctx context.Context, payload *token.Payload, refreshToken string) error
 	BlockSession(ctx context.Context, sessionID uuid.UUID) error
 }
