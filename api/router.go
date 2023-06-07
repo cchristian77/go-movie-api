@@ -14,6 +14,8 @@ import (
 	"net/http"
 	"time"
 
+	_authController "go-movie-api/modules/auth/controller/http"
+	_authService "go-movie-api/modules/auth/service"
 	_movieController "go-movie-api/modules/movie/controller/http"
 	_movieRepo "go-movie-api/modules/movie/repository"
 	_movieService "go-movie-api/modules/movie/service"
@@ -86,12 +88,17 @@ func registerRoutes(router *echo.Echo, db *gorm.DB) {
 
 	// Rating
 	ratingRepo := _ratingRepo.NewRatingRepository(db)
-	ratingService := _ratingService.NewRatingService(ratingRepo, timeout)
+	ratingService := _ratingService.NewRatingService(ratingRepo, movieRepo, timeout)
 	_ratingController.NewRatingController(router, ratingService)
 
 	// User
 	userRepo := _userRepo.NewUserRepository(db)
-	sessionRepo := _sessionRepo.NewSessionRepository(db)
-	userService := _userService.NewUserService(userRepo, sessionRepo, timeout)
+	userService := _userService.NewUserService(userRepo, timeout)
 	_userController.NewUserController(router, userService)
+
+	// Auth
+	sessionRepo := _sessionRepo.NewSessionRepository(db)
+	authService := _authService.NewAuthService(userRepo, sessionRepo, timeout)
+	_authController.NewAuthController(router, authService, userService)
+
 }
