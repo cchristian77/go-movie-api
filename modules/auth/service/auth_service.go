@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go-movie-api/domain"
@@ -66,7 +65,7 @@ func (service *authService) VerifySession(ctx context.Context, payload *token.Pa
 	session, err := service.sessionRepo.FindByID(ctx, payload.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return errorHelper.NotFoundErr
+			return token.InvalidTokenErr
 		}
 
 		return err
@@ -97,7 +96,6 @@ func (service *authService) VerifySession(ctx context.Context, payload *token.Pa
 }
 
 func (service *authService) BlockSession(ctx context.Context, sessionID uuid.UUID) error {
-	fmt.Println(sessionID)
 	session, err := service.sessionRepo.FindByID(ctx, sessionID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -108,6 +106,14 @@ func (service *authService) BlockSession(ctx context.Context, sessionID uuid.UUI
 	}
 
 	if err = service.sessionRepo.BlockSession(ctx, session.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *authService) DeleteOldSession(ctx context.Context, session *domain.Session) error {
+	if err := service.sessionRepo.Delete(ctx, session); err != nil {
 		return err
 	}
 

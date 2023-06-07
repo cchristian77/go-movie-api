@@ -20,6 +20,6 @@ type Session struct {
 type SessionRepository interface {
 	Store(ctx context.Context, session *Session) (Session, error)
 	FindByID(ctx context.Context, id uuid.UUID) (Session, error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, session *Session) error
 	BlockSession(ctx context.Context, id uuid.UUID) error
 }

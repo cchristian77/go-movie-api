@@ -13,6 +13,7 @@ const (
 	authHeaderKey  = "authorization"
 	authTypeBearer = "bearer"
 	AuthPayloadKey = "auth_payload"
+	AuthUserKey    = "auth_user"
 )
 
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {

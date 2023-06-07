@@ -52,8 +52,13 @@ func (repo *sessionRepository) BlockSession(ctx context.Context, id uuid.UUID) e
 	return nil
 }
 
-func (repo *sessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	result := repo.db.WithContext(ctx).Delete(&domain.Session{}, id.String())
+func (repo *sessionRepository) Delete(ctx context.Context, session *domain.Session) error {
+	result := repo.db.WithContext(ctx).
+		Where(
+			"user_id = ? AND user_agent = ? AND client_ip = ?",
+			session.UserID, session.UserAgent, session.ClientIp,
+		).
+		Delete(&domain.Session{})
 	if result.Error != nil {
 		utils.Logger.Error(result.Error.Error())
 		return result.Error

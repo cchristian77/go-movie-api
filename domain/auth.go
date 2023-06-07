@@ -11,4 +11,5 @@ type AuthService interface {
 	CreateSession(ctx context.Context, session *Session) (Session, error)
 	VerifySession(ctx context.Context, payload *token.Payload, refreshToken string) error
 	BlockSession(ctx context.Context, sessionID uuid.UUID) error
+	DeleteOldSession(ctx context.Context, session *Session) error
 }
