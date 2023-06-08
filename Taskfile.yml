@@ -66,8 +66,8 @@ tasks:
       - echo 'Done!'
     silent: true
 
-  migrate:
-    desc: migrate table
+  migrate_up:
+    desc: migrate up tables
     cmds:
       - echo 'Migrating tables...'
       - docker compose -f {{.DOCKER_COMPOSE}} run --rm up_migration

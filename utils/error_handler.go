@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"go-movie-api/token"
 	"go-movie-api/utils/helper"
 	"go-movie-api/utils/response"
 	"net/http"
@@ -44,8 +45,12 @@ func getStatusCode(err error) int {
 		return http.StatusNotFound
 	case helper.ConflictErr:
 		return http.StatusConflict
+	case helper.BadParamInputErr, helper.IncorrectCredentialErr:
+		return http.StatusBadRequest
 	case helper.ForbiddenErr:
 		return http.StatusForbidden
+	case helper.UnauthorizedErr, token.InvalidTokenErr, token.ExpiredTokenErr:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}

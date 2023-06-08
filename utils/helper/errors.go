@@ -17,4 +17,10 @@ var (
 
 	// ForbiddenErr will throw if the current request is forbidden
 	ForbiddenErr = errors.New("Forbidden Access")
+
+	// UnauthorizedErr will throw if the current request is unauthorized
+	UnauthorizedErr = errors.New("Unauthorized")
+
+	// IncorrectCredentialErr will throw if the email or password credential is incorrect
+	IncorrectCredentialErr = errors.New("Login failed. Email or password is incorrect.")
 )

@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go-movie-api/domain"
+	"go-movie-api/middleware"
 	"go-movie-api/utils/response"
 	"net/http"
 )
@@ -18,10 +19,10 @@ func NewRatingController(router *echo.Echo, genreService domain.RatingService) {
 	}
 
 	group := router.Group("/ratings")
-	group.POST("", controller.Store)
 	group.GET("/:uuid", controller.Show)
-	group.PUT("/:uuid", controller.Update)
-	group.DELETE("/:uuid", controller.Destroy)
+	group.POST("", controller.Store, middleware.AuthMiddleware)
+	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware)
+	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware)
 }
 
 func (controller *RatingController) Show(ec echo.Context) error {
