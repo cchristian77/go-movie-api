@@ -22,9 +22,9 @@ func NewGenreController(router *echo.Echo, genreService domain.GenreService) {
 	group := router.Group("/genres")
 	group.GET("/:uuid", controller.Show)
 	group.GET("", controller.Index)
-	group.POST("", controller.Store, middleware.AuthMiddleware)
-	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware)
-	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware)
+	group.POST("", controller.Store, middleware.AuthMiddleware.Handler)
+	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware.Handler)
+	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware.Handler)
 }
 
 func (controller *GenreController) Index(ec echo.Context) error {

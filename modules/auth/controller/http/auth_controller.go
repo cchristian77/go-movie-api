@@ -3,10 +3,10 @@ package http
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"go-movie-api/configs"
 	"go-movie-api/domain"
 	"go-movie-api/middleware"
 	"go-movie-api/token"
-	"go-movie-api/utils"
 	"net/http"
 	"time"
 )
@@ -26,8 +26,8 @@ func NewAuthController(router *echo.Echo, authService domain.AuthService, userSe
 	authGroup.POST("/register", controller.Store)
 	authGroup.POST("/login", controller.Login)
 	authGroup.POST("/renew-token", controller.RenewAccessToken)
-	authGroup.POST("/logout", controller.Logout, middleware.AuthMiddleware)
-	authGroup.GET("/current-user", controller.CurrentUser, middleware.AuthMiddleware)
+	authGroup.POST("/logout", controller.Logout, middleware.AuthMiddleware.Handler)
+	authGroup.GET("/current-user", controller.CurrentUser, middleware.AuthMiddleware.Handler)
 }
 
 func (controller *AuthController) Store(ec echo.Context) error {
@@ -75,8 +75,8 @@ func (controller *AuthController) Login(ec echo.Context) error {
 
 	tokenID := uuid.Must(uuid.NewRandom())
 
-	accessTokenDuration, _ := time.ParseDuration(utils.Env.Auth.AccessTokenExpiration)
-	refreshTokenDuration, _ := time.ParseDuration(utils.Env.Auth.RefreshTokenExpiration)
+	accessTokenDuration, _ := time.ParseDuration(configs.Env.Auth.AccessTokenExpiration)
+	refreshTokenDuration, _ := time.ParseDuration(configs.Env.Auth.RefreshTokenExpiration)
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
@@ -96,16 +96,22 @@ func (controller *AuthController) Login(ec echo.Context) error {
 	}
 
 	accessTokenExpiresAt := time.Unix(accessPayload.StandardClaims.ExpiresAt, 0)
+	accessTokenCreatedAt := time.Unix(accessPayload.StandardClaims.IssuedAt, 0)
 	refreshTokenExpiresAt := time.Unix(refreshPayload.StandardClaims.ExpiresAt, 0)
+	refreshTokenCreatedAt := time.Unix(refreshPayload.StandardClaims.IssuedAt, 0)
 
 	session := domain.Session{
-		ID:           tokenID,
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		UserAgent:    ec.Request().UserAgent(),
-		ClientIp:     ec.RealIP(),
-		IsBlocked:    false,
-		ExpiresAt:    refreshTokenExpiresAt,
+		ID:                    tokenID,
+		UserID:                user.ID,
+		AccessToken:           accessToken,
+		RefreshToken:          refreshToken,
+		AccessTokenExpiresAt:  refreshTokenExpiresAt,
+		AccessTokenCreatedAt:  accessTokenCreatedAt,
+		RefreshTokenExpiresAt: refreshTokenExpiresAt,
+		RefreshTokenCreatedAt: refreshTokenCreatedAt,
+		UserAgent:             ec.Request().UserAgent(),
+		ClientIp:              ec.RealIP(),
+		IsRevoked:             false,
 	}
 
 	controller.AuthService.DeleteOldSession(ctx, &session)
@@ -131,7 +137,7 @@ func (controller *AuthController) Login(ec echo.Context) error {
 
 func (controller *AuthController) Logout(ec echo.Context) error {
 	authPayload := ec.Get(middleware.AuthPayloadKey).(*token.Payload)
-	err := controller.AuthService.BlockSession(ec.Request().Context(), authPayload.ID)
+	err := controller.AuthService.RevokeSession(ec.Request().Context(), authPayload.ID)
 	if err != nil {
 		return err
 	}
@@ -171,8 +177,8 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 
 	tokenID := uuid.Must(uuid.NewRandom())
 
-	accessTokenDuration, _ := time.ParseDuration(utils.Env.Auth.AccessTokenExpiration)
-	refreshTokenDuration, _ := time.ParseDuration(utils.Env.Auth.RefreshTokenExpiration)
+	accessTokenDuration, _ := time.ParseDuration(configs.Env.Auth.AccessTokenExpiration)
+	refreshTokenDuration, _ := time.ParseDuration(configs.Env.Auth.RefreshTokenExpiration)
 	accessToken, accessPayload, err := token.TokenMaker.GenerateToken(
 		tokenID,
 		user.Uuid,
@@ -192,16 +198,22 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 	}
 
 	accessTokenExpiresAt := time.Unix(accessPayload.StandardClaims.ExpiresAt, 0)
+	accessTokenCreatedAt := time.Unix(accessPayload.StandardClaims.IssuedAt, 0)
 	refreshTokenExpiresAt := time.Unix(refreshPayload.StandardClaims.ExpiresAt, 0)
+	refreshTokenCreatedAt := time.Unix(refreshPayload.StandardClaims.IssuedAt, 0)
 
 	session := domain.Session{
-		ID:           tokenID,
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		UserAgent:    ec.Request().UserAgent(),
-		ClientIp:     ec.RealIP(),
-		IsBlocked:    false,
-		ExpiresAt:    refreshTokenExpiresAt,
+		ID:                    tokenID,
+		UserID:                user.ID,
+		AccessToken:           accessToken,
+		RefreshToken:          refreshToken,
+		AccessTokenExpiresAt:  refreshTokenExpiresAt,
+		AccessTokenCreatedAt:  accessTokenCreatedAt,
+		RefreshTokenExpiresAt: refreshTokenExpiresAt,
+		RefreshTokenCreatedAt: refreshTokenCreatedAt,
+		UserAgent:             ec.Request().UserAgent(),
+		ClientIp:              ec.RealIP(),
+		IsRevoked:             false,
 	}
 
 	controller.AuthService.DeleteOldSession(ctx, &session)
@@ -226,12 +238,5 @@ func (controller *AuthController) RenewAccessToken(ec echo.Context) error {
 }
 
 func (controller *AuthController) CurrentUser(ec echo.Context) error {
-	authPayload := ec.Get(middleware.AuthPayloadKey).(*token.Payload)
-
-	user, err := controller.UserService.FindByID(ec.Request().Context(), authPayload.UserUuid)
-	if err != nil {
-		return err
-	}
-
-	return ec.JSON(http.StatusOK, user)
+	return ec.JSON(http.StatusOK, ec.Get(middleware.AuthUserKey).(*domain.User))
 }

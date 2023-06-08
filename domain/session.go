@@ -7,14 +7,17 @@ import (
 )
 
 type Session struct {
-	ID           uuid.UUID
-	UserID       uint
-	RefreshToken string
-	UserAgent    string
-	ClientIp     string
-	IsBlocked    bool
-	ExpiresAt    time.Time
-	CreatedAt    time.Time
+	ID                    uuid.UUID
+	UserID                uint
+	AccessToken           string
+	RefreshToken          string
+	AccessTokenExpiresAt  time.Time
+	AccessTokenCreatedAt  time.Time
+	RefreshTokenExpiresAt time.Time
+	RefreshTokenCreatedAt time.Time
+	UserAgent             string
+	ClientIp              string
+	IsRevoked             bool
 }
 
 type SessionRepository interface {

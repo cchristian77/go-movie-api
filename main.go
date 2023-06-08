@@ -1,17 +1,27 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
+	"github.com/labstack/echo/v4"
 	"go-movie-api/api"
+	"go-movie-api/configs"
 	"go-movie-api/database"
 	"go-movie-api/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 var config = koanf.New(".")
+
+type Server struct {
+	DB     *sql.DB
+	GormDB *gorm.DB
+	Router *echo.Echo
+}
 
 func init() {
 	// Load Config JSON
@@ -19,11 +29,11 @@ func init() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	if err := config.UnmarshalWithConf("env", &utils.Env, koanf.UnmarshalConf{Tag: "koanf"}); err != nil {
+	if err := config.UnmarshalWithConf("env", &configs.Env, koanf.UnmarshalConf{Tag: "koanf"}); err != nil {
 		utils.Logger.Fatal(fmt.Sprintf("failed to read env.json file: %v", err))
 	}
 
-	log.Println("Starting service on port", utils.Env.App.Port)
+	log.Println("Starting service on port", configs.Env.App.Port)
 }
 
 func main() {
@@ -41,11 +51,13 @@ func main() {
 		utils.Logger.Fatal(fmt.Sprintf("gorm driver errror: %v", err))
 	}
 
-	api.Server.DB = db
-	api.Server.GormDB = gormDB
-	api.Server.Router = api.InitializedRouter(gormDB)
-	defer api.Server.DB.Close()
+	app := Server{
+		DB:     db,
+		GormDB: gormDB,
+		Router: api.InitializedRouter(gormDB),
+	}
+	defer app.DB.Close()
 
 	// Run application
-	api.Server.Router.Logger.Fatal(api.Server.Router.Start(fmt.Sprintf(":%d", utils.Env.App.Port)))
+	app.Router.Logger.Fatal(app.Router.Start(fmt.Sprintf(":%d", configs.Env.App.Port)))
 }

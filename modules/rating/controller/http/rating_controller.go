@@ -20,9 +20,9 @@ func NewRatingController(router *echo.Echo, genreService domain.RatingService) {
 
 	group := router.Group("/ratings")
 	group.GET("/:uuid", controller.Show)
-	group.POST("", controller.Store, middleware.AuthMiddleware)
-	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware)
-	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware)
+	group.POST("", controller.Store, middleware.AuthMiddleware.Handler)
+	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware.Handler)
+	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware.Handler)
 }
 
 func (controller *RatingController) Show(ec echo.Context) error {

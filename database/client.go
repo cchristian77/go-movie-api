@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"go-movie-api/configs"
 	"go-movie-api/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -46,11 +47,11 @@ func OpenGormDB(sqlDB *sql.DB) (*gorm.DB, error) {
 func ConnectToDB() *sql.DB {
 	// get dsn from env.json
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		utils.Env.Database.Host,
-		utils.Env.Database.Port,
-		utils.Env.Database.User,
-		utils.Env.Database.Password,
-		utils.Env.Database.DBName,
+		configs.Env.Database.Host,
+		configs.Env.Database.Port,
+		configs.Env.Database.User,
+		configs.Env.Database.Password,
+		configs.Env.Database.DBName,
 	)
 
 	// get dsn from docker

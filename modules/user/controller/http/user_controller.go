@@ -19,7 +19,7 @@ func NewUserController(router *echo.Echo, userService domain.UserService) {
 		UserService: userService,
 	}
 
-	userGroup := router.Group("/users", middleware.AuthMiddleware)
+	userGroup := router.Group("/users", middleware.AuthMiddleware.Handler)
 	userGroup.GET("", controller.Index)
 	userGroup.GET("/:uuid", controller.Show)
 	userGroup.PUT("/:uuid", controller.Update)
