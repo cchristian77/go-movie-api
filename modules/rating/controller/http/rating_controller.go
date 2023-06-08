@@ -49,12 +49,15 @@ func (controller *RatingController) Store(ec echo.Context) error {
 		return err
 	}
 
+	authUser := ec.Get(middleware.AuthUserKey).(*domain.User)
+
 	data, err := controller.RatingService.Store(ec.Request().Context(), &domain.Rating{
 		Rating:  request.Rating,
 		Comment: request.Comment,
 		Movie: &domain.Movie{
 			Uuid: request.MovieUuid,
 		},
+		UserID: authUser.ID,
 	})
 	if err != nil {
 		return err

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS ratings
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
+    user_id    INTEGER   NOT NULL REFERENCES users (id),
     movie_id   INTEGER   NOT NULL REFERENCES movies (id),
     rating     NUMERIC(3, 2) CHECK ( rating > 0 ),
     comment    TEXT

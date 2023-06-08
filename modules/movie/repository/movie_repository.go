@@ -40,6 +40,7 @@ func (repo *movieRepository) FindByID(ctx context.Context, uuid uuid.UUID) (doma
 	result := repo.db.WithContext(ctx).Where("uuid = ?", uuid.String()).
 		Preload("Genres").
 		Preload("Ratings").
+		Preload("Ratings.User").
 		First(&movie)
 	if result.Error != nil {
 		return domain.Movie{}, result.Error
