@@ -1,4 +1,4 @@
-package utils
+package configs
 
 var Env Config
 
@@ -23,4 +23,5 @@ type Config struct {
 		AccessTokenExpiration  string `koanf:"access_token_expiration"`
 		RefreshTokenExpiration string `koanf:"refresh_token_expiration"`
 	} `koanf:"auth"`
+	JWTKey string `koanf:"jwt_key"`
 }

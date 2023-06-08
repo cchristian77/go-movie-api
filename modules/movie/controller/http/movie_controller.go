@@ -22,9 +22,9 @@ func NewMovieController(router *echo.Echo, movieService domain.MovieService) {
 	group := router.Group("/movies")
 	group.GET("", controller.Index)
 	group.GET("/:uuid", controller.Show)
-	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware)
-	group.POST("", controller.Store, middleware.AuthMiddleware)
-	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware)
+	group.PUT("/:uuid", controller.Update, middleware.AuthMiddleware.Handler)
+	group.POST("", controller.Store, middleware.AuthMiddleware.Handler)
+	group.DELETE("/:uuid", controller.Destroy, middleware.AuthMiddleware.Handler)
 }
 
 func (controller *MovieController) Index(ec echo.Context) error {

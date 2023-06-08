@@ -75,12 +75,12 @@ func (service *authService) VerifySession(ctx context.Context, payload *token.Pa
 		return token.InvalidTokenErr
 	}
 
-	if time.Now().After(session.ExpiresAt) {
+	if time.Now().After(session.RefreshTokenExpiresAt) {
 		return echo.NewHTTPError(http.StatusUnauthorized, errors.New("session is expired"))
 	}
 
 	user, err := service.userRepo.FindByID(ctx, payload.UserUuid)
-	if session.IsBlocked {
+	if session.IsRevoked {
 		if err == gorm.ErrRecordNotFound {
 			return errorHelper.NotFoundErr
 		}
@@ -95,7 +95,7 @@ func (service *authService) VerifySession(ctx context.Context, payload *token.Pa
 	return nil
 }
 
-func (service *authService) BlockSession(ctx context.Context, sessionID uuid.UUID) error {
+func (service *authService) RevokeSession(ctx context.Context, sessionID uuid.UUID) error {
 	session, err := service.sessionRepo.FindByID(ctx, sessionID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

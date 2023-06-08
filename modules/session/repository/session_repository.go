@@ -42,7 +42,7 @@ func (repo *sessionRepository) FindByID(ctx context.Context, id uuid.UUID) (doma
 func (repo *sessionRepository) BlockSession(ctx context.Context, id uuid.UUID) error {
 	session := domain.Session{
 		ID:        id,
-		IsBlocked: true,
+		IsRevoked: true,
 	}
 	result := repo.db.WithContext(ctx).Model(&session).Updates(&session)
 	if result.Error != nil {

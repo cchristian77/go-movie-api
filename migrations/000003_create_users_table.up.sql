@@ -16,12 +16,15 @@ CREATE TABLE IF NOT EXISTS users
 
 CREATE TABLE IF NOT EXISTS sessions
 (
-    id            UUID PRIMARY KEY,
-    user_id       INTEGER REFERENCES users (id) NOT NULL,
-    refresh_token TEXT                          NOT NULL,
-    user_agent    VARCHAR(255)                  NOT NULL,
-    client_ip     VARCHAR(255)                  NOT NULL,
-    is_blocked    BOOLEAN                       NOT NULL DEFAULT false,
-    expires_at    TIMESTAMPTZ                   NOT NULL,
-    created_at    TIMESTAMPTZ                   NOT NULL DEFAULT (now())
+    id                       UUID PRIMARY KEY,
+    user_id                  INTEGER REFERENCES users (id) NOT NULL,
+    access_token             TEXT                          NOT NULL,
+    refresh_token            TEXT                          NOT NULL,
+    access_token_expires_at  TIMESTAMPTZ                   NOT NULL,
+    access_token_created_at  TIMESTAMPTZ                   NOT NULL DEFAULT (now()),
+    refresh_token_expires_at TIMESTAMPTZ                   NOT NULL,
+    refresh_token_created_at TIMESTAMPTZ                   NOT NULL DEFAULT (now()),
+    user_agent               VARCHAR(255)                  NOT NULL,
+    client_ip                VARCHAR(255)                  NOT NULL,
+    is_revoked               BOOLEAN                       NOT NULL DEFAULT false
 );

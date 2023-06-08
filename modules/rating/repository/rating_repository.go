@@ -22,6 +22,7 @@ func (repo *ratingRepository) FindByID(ctx context.Context, uuid uuid.UUID) (dom
 	var rating domain.Rating
 
 	result := repo.db.WithContext(ctx).
+		Preload("User").
 		Preload("Movie").
 		Where("uuid = ?", uuid.String()).
 		First(&rating)

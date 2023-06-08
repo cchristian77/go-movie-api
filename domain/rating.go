@@ -13,10 +13,12 @@ type Rating struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	UserID    uint           `json:"-"`
 	MovieID   uint           `json:"-"`
 	Rating    float32        `json:"rating"`
 	Comment   string         `json:"comment"`
 	Movie     *Movie         `json:"movie,omitempty"`
+	User      *User          `json:"user,omitempty"`
 }
 
 type RatingService interface {
